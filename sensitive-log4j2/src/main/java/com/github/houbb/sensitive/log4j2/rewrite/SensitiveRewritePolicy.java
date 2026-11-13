@@ -61,11 +61,31 @@ public class SensitiveRewritePolicy implements RewritePolicy {
                 return source;
             }
 
-            // 直接返回原始的。
-            return source;
+            // 未知事件类型也要失败关闭，不能把原文直接写进日志。
+            return maskEvent(source);
         } catch (Exception e) {
+            return maskEvent(source);
+        }
+    }
+
+    /**
+     * 兜底事件：消息体替换为固定脱敏标记，避免故障期间原文进入日志。
+     */
+    private LogEvent maskEvent(LogEvent source) {
+        String masked = SensitiveScanBsContext.maskOnFailure(
+                source.getMessage() == null
+                        ? null
+                        : source.getMessage().getFormattedMessage());
+        if (source instanceof MutableLogEvent) {
+            ((MutableLogEvent) source).setMessage(new SimpleMessage(masked));
             return source;
         }
+        if (source instanceof Log4jLogEvent) {
+            return new Log4jLogEvent.Builder((Log4jLogEvent) source)
+                    .setMessage(new SimpleMessage(masked))
+                    .build();
+        }
+        return source;
     }
 
     private Message getMessage(LogEvent source) {

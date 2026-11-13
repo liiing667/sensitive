@@ -1011,6 +1011,22 @@ CharsScanBs charsScanBs = SensitiveScanBsContext.getCharsScanBs();
 配置重载会重新创建底层 `CharsScanBs`，后续日志同时使用新配置。调用方不需要分别刷新
 log4j2 和 logback。
 
+### 默认失败关闭
+
+日志脱敏在任何故障路径下都不会把原文写回日志：
+
+- 配置损坏（类不存在、标识非法、配置文件无法读取等）时，构建快速失败；首次初始化
+  失败会回退到内置默认配置，运行时重载失败则继续使用上一次可用的共享扫描器，
+  畸形配置不会污染共享实例。
+- 单个自定义扫描器抛异常时跳过该扫描器，同批次其余规则仍按原顺序继续脱敏。
+- 单个替换策略抛异常时，当前命中区间改用固定脱敏标记 `******`，其他区间不受影响。
+- 整体扫描管线异常或兜底扫描器也不可用时，整条日志消息统一输出固定脱敏标记
+  `******`，手机号、证件号、口令等敏感信息不会泄露。
+
+log4j2（`SensitivePatternLayout`、`SensitiveRewritePolicy`）与 logback
+（`SensitiveLogbackConverter`、`SensitiveLogbackLayout`）共用同一个
+`SensitiveScanBsContext`，因此上述失败关闭行为两端完全一致。
+
 ## log4j2 接入
 
 ### Maven 依赖

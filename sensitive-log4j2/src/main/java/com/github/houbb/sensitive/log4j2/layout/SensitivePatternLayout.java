@@ -44,11 +44,7 @@ public class SensitivePatternLayout extends AbstractStringLayout {
         }
         String text = stringBuilder.toString();
 
-        try {
-            return SensitiveScanBsContext.scanAndReplace(text);
-        } catch (Exception e) {
-            return text;
-        }
+        return SensitiveScanBsContext.scanAndReplace(text);
     }
 
     /**

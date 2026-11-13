@@ -128,6 +128,36 @@ public final class SensitiveScanBsBuilder {
                 .init();
     }
 
+    /**
+     * 构建默认失败关闭的扫描器。
+     *
+     * <p>与 {@link #build(Properties)} 使用同一份配置解析逻辑，仅在扫描工厂、
+     * 替换工厂和扫描核心外增加失败关闭包装：单个自定义扫描器失败时跳过，
+     * 单个替换策略失败时使用固定脱敏标记，整体管线异常时也不会透传原文。</p>
+     *
+     * @param config 配置；允许为空
+     * @return 初始化后的失败关闭扫描器
+     */
+    public static CharsScanBs buildFailClosed(Properties config) {
+        Properties actualConfig = config == null ? new Properties() : config;
+
+        return CharsScanBs.newInstance()
+                .charsCore(new FailClosedCharsCore(buildCharsCore(actualConfig)))
+                .charsScanFactory(new FailClosedCharsScanFactory(
+                        buildCharsScanFactory(actualConfig)))
+                .charsReplaceFactory(new FailClosedCharsReplaceFactory(
+                        buildCharsReplaceFactory(actualConfig)))
+                .charsReplaceHash(buildCharsReplaceHash(actualConfig))
+                .prefixCharSet(buildPrefixCharSet(actualConfig))
+                .escapePrefixCharSet(buildEscapePrefixCharSet(actualConfig))
+                .whiteListTrie(buildWhiteListTrie(actualConfig))
+                .scanStartIndex(getInt(
+                        actualConfig,
+                        KEY_SCAN_START_INDEX,
+                        CharsScanConfigConst.DEFAULT_START_INDEX))
+                .init();
+    }
+
     private static ICharsScanFactory buildCharsScanFactory(Properties config) {
         ICharsScanFactory configuredFactory = newConfiguredInstance(
                 config, KEY_CHARS_SCAN_FACTORY_CLASS, ICharsScanFactory.class);
